@@ -3,18 +3,18 @@ let camera, scene, renderer, idolMesh;
 let video;
 let scaleSlider = document.getElementById("scaleSlider");
 let captureBtn = document.getElementById("capture");
-let startBtn = document.getElementById("start");
+let overlay = document.getElementById("overlay");
 
-startBtn.addEventListener("click", () => {
-    startBtn.style.display = "none";
+overlay.addEventListener("click", () => {
+    overlay.style.display = "none";
     init();
     animate();
 });
 
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-    camera.position.z = 1;
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.z = 1.2;
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -41,7 +41,7 @@ function init() {
     .then(() => {
         const videoTexture = new THREE.VideoTexture(video);
         const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-        const videoGeometry = new THREE.PlaneGeometry(2, 2);
+        const videoGeometry = new THREE.PlaneGeometry(2 * camera.aspect, 2);
         const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
         videoMesh.material.depthTest = false;
         videoMesh.material.depthWrite = false;
@@ -67,7 +67,7 @@ function init() {
         });
     };
 
-    // DeviceOrientation
+    // 傾きセンサー許可処理
     if (typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function") {
         DeviceOrientationEvent.requestPermission()
