@@ -3,10 +3,10 @@ let camera, scene, renderer, idolMesh;
 let video;
 const scaleSlider = document.getElementById("scaleSlider");
 const captureBtn = document.getElementById("capture");
-const overlay = document.getElementById("overlay");
+const startButton = document.getElementById("startButton");
 
-overlay.addEventListener("click", () => {
-    overlay.style.display = "none";
+startButton.addEventListener("click", () => {
+    startButton.style.display = "none";
     init();
     animate();
 }, { once: true });
@@ -20,11 +20,10 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // video設定
     video = document.createElement("video");
     video.setAttribute("autoplay", "");
     video.setAttribute("playsinline", "");
-    video.style.display = "none";  // 非表示
+    video.style.display = "none";
     document.body.appendChild(video);
 
     navigator.mediaDevices.getUserMedia({
@@ -53,7 +52,6 @@ function init() {
         alert("カメラの使用が許可されていません: " + err.message);
     });
 
-    // idol画像読み込み（アスペクト比維持）
     const loader = new THREE.TextureLoader();
     const img = new Image();
     img.src = "assets/idol.png";
@@ -68,7 +66,6 @@ function init() {
         });
     };
 
-    // センサー許可
     if (typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function") {
         DeviceOrientationEvent.requestPermission()
