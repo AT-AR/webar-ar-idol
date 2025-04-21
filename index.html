@@ -1,0 +1,16 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ARアイドル撮影（Three.js版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>body { margin: 0; overflow: hidden; }</style>
+</head>
+<body>
+    <input type="range" id="scaleSlider" min="0.5" max="3" step="0.01" value="1" style="position:fixed;bottom:60px;width:80%;left:10%;z-index:10;">
+    <button id="capture" style="position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:10;">撮影</button>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
