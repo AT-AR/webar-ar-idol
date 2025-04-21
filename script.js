@@ -1,26 +1,37 @@
 
-let camera, scene, renderer, idolMesh, video;
+let camera, scene, renderer, idolMesh;
+let video;
 let scaleSlider = document.getElementById("scaleSlider");
 let captureBtn = document.getElementById("capture");
+let startBtn = document.getElementById("start");
 
-init();
-animate();
+startBtn.addEventListener("click", () => {
+    startBtn.style.display = "none";
+    init();
+    animate();
+});
 
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 100);
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
     camera.position.z = 1;
 
-    renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // カメラ背景映像
+    // video要素
     video = document.createElement("video");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("playsinline", "");
+    document.body.appendChild(video);
+
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
     .then(stream => {
         video.srcObject = stream;
-        video.play();
+        return video.play();
+    })
+    .then(() => {
         const videoTexture = new THREE.VideoTexture(video);
         const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
         const videoGeometry = new THREE.PlaneGeometry(2, 2);
@@ -29,9 +40,12 @@ function init() {
         videoMesh.material.depthWrite = false;
         videoMesh.renderOrder = -1;
         scene.add(videoMesh);
+    })
+    .catch(err => {
+        alert("カメラの使用が許可されていません: " + err.message);
     });
 
-    // アイドル画像テクスチャ
+    // idol画像読み込み
     const loader = new THREE.TextureLoader();
     loader.load("assets/idol.png", texture => {
         const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
@@ -41,15 +55,23 @@ function init() {
         scene.add(idolMesh);
     });
 
-    // 端末の傾きに応じてカメラの向き変更
-    window.addEventListener("deviceorientation", (event) => {
-        let beta = THREE.MathUtils.degToRad(event.beta || 0);
-        let gamma = THREE.MathUtils.degToRad(event.gamma || 0);
-        camera.rotation.x = beta - Math.PI / 2;
-        camera.rotation.y = gamma;
-    });
+    // iOSの傾きセンサー許可
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function") {
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === "granted") {
+                    window.addEventListener("deviceorientation", handleOrientation);
+                } else {
+                    alert("端末の向き情報が許可されていません");
+                }
+            })
+            .catch(console.error);
+    } else {
+        window.addEventListener("deviceorientation", handleOrientation);
+    }
 
-    // スライダーで拡大縮小
+    // スライダーによるサイズ調整
     scaleSlider.addEventListener("input", () => {
         if (idolMesh) {
             let scale = parseFloat(scaleSlider.value);
@@ -68,7 +90,16 @@ function init() {
     });
 }
 
+function handleOrientation(event) {
+    let beta = THREE.MathUtils.degToRad(event.beta || 0);
+    let gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+    camera.rotation.x = beta - Math.PI / 2;
+    camera.rotation.y = gamma;
+}
+
 function animate() {
     requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
 }
