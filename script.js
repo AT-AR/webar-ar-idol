@@ -1,15 +1,15 @@
 
 let camera, scene, renderer, idolMesh;
 let video;
-let scaleSlider = document.getElementById("scaleSlider");
-let captureBtn = document.getElementById("capture");
-let overlay = document.getElementById("overlay");
+const scaleSlider = document.getElementById("scaleSlider");
+const captureBtn = document.getElementById("capture");
+const overlay = document.getElementById("overlay");
 
 overlay.addEventListener("click", () => {
     overlay.style.display = "none";
     init();
     animate();
-});
+}, { once: true });
 
 function init() {
     scene = new THREE.Scene();
@@ -24,6 +24,7 @@ function init() {
     video = document.createElement("video");
     video.setAttribute("autoplay", "");
     video.setAttribute("playsinline", "");
+    video.style.display = "none";  // 非表示
     document.body.appendChild(video);
 
     navigator.mediaDevices.getUserMedia({
@@ -36,17 +37,17 @@ function init() {
     })
     .then(stream => {
         video.srcObject = stream;
+        video.addEventListener("canplay", () => {
+            const videoTexture = new THREE.VideoTexture(video);
+            const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
+            const videoGeometry = new THREE.PlaneGeometry(2 * camera.aspect, 2);
+            const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
+            videoMesh.material.depthTest = false;
+            videoMesh.material.depthWrite = false;
+            videoMesh.renderOrder = -1;
+            scene.add(videoMesh);
+        });
         return video.play();
-    })
-    .then(() => {
-        const videoTexture = new THREE.VideoTexture(video);
-        const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-        const videoGeometry = new THREE.PlaneGeometry(2 * camera.aspect, 2);
-        const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
-        videoMesh.material.depthTest = false;
-        videoMesh.material.depthWrite = false;
-        videoMesh.renderOrder = -1;
-        scene.add(videoMesh);
     })
     .catch(err => {
         alert("カメラの使用が許可されていません: " + err.message);
@@ -67,7 +68,7 @@ function init() {
         });
     };
 
-    // 傾きセンサー許可処理
+    // センサー許可
     if (typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function") {
         DeviceOrientationEvent.requestPermission()
@@ -85,7 +86,7 @@ function init() {
 
     scaleSlider.addEventListener("input", () => {
         if (idolMesh) {
-            let scale = parseFloat(scaleSlider.value);
+            const scale = parseFloat(scaleSlider.value);
             idolMesh.scale.set(scale, scale, 1);
         }
     });
@@ -101,8 +102,8 @@ function init() {
 }
 
 function handleOrientation(event) {
-    let beta = THREE.MathUtils.degToRad(event.beta || 0);
-    let gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+    const beta = THREE.MathUtils.degToRad(event.beta || 0);
+    const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
     camera.rotation.x = beta - Math.PI / 2;
     camera.rotation.y = gamma;
 }
