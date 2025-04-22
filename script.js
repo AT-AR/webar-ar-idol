@@ -1,6 +1,6 @@
 
 let camera, scene, renderer, idolMesh;
-let video, videoMesh;
+let video;
 const scaleSlider = document.getElementById("scaleSlider");
 const captureBtn = document.getElementById("capture");
 const startButton = document.getElementById("startButton");
@@ -36,19 +36,14 @@ function init() {
     })
     .then(stream => {
         video.srcObject = stream;
-        video.addEventListener("loadedmetadata", () => {
-            const aspect = video.videoWidth / video.videoHeight;
-            const height = 3;
-            const width = height * aspect;
-
+        video.addEventListener("canplay", () => {
             const videoTexture = new THREE.VideoTexture(video);
             const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-            const videoGeometry = new THREE.PlaneGeometry(width, height);
-            videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
+            const videoGeometry = new THREE.PlaneGeometry(2 * camera.aspect, 2);
+            const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
             videoMesh.material.depthTest = false;
             videoMesh.material.depthWrite = false;
             videoMesh.renderOrder = -1;
-            videoMesh.position.z = -5;
             scene.add(videoMesh);
         });
         return video.play();
@@ -67,7 +62,6 @@ function init() {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
             idolMesh = new THREE.Mesh(geometry, material);
             idolMesh.position.set(0, -0.5, -2);
-            idolMesh.scale.set(1.2, 1.2, 1);
             scene.add(idolMesh);
         });
     };
@@ -101,12 +95,6 @@ function init() {
         link.download = "photo.png";
         link.href = dataURL;
         link.click();
-    });
-
-    window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
     });
 }
 
