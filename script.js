@@ -39,11 +39,12 @@ function init() {
         video.addEventListener("canplay", () => {
             const videoTexture = new THREE.VideoTexture(video);
             const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-            const videoGeometry = new THREE.PlaneGeometry(2 * camera.aspect, 2);
+            const videoGeometry = new THREE.PlaneGeometry(6, 3.5); // 大きめ背景
             const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
             videoMesh.material.depthTest = false;
             videoMesh.material.depthWrite = false;
             videoMesh.renderOrder = -1;
+            videoMesh.position.z = -5; // 少し奥に配置
             scene.add(videoMesh);
         });
         return video.play();
@@ -62,6 +63,7 @@ function init() {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
             idolMesh = new THREE.Mesh(geometry, material);
             idolMesh.position.set(0, -0.5, -2);
+            idolMesh.scale.set(1.2, 1.2, 1); // 初期スケール少し大きく
             scene.add(idolMesh);
         });
     };
