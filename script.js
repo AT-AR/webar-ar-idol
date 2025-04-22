@@ -15,6 +15,7 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
     camera.position.z = 1.2;
+    scene.add(camera);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29,8 +30,9 @@ function init() {
     navigator.mediaDevices.getUserMedia({
         video: {
             facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            width: { min: 1280, ideal: 1920, max: 2560 },
+            height: { min: 720, ideal: 1080, max: 1440 },
+            frameRate: { ideal: 30, max: 60 }
         },
         audio: false
     })
@@ -39,13 +41,13 @@ function init() {
         video.addEventListener("canplay", () => {
             const videoTexture = new THREE.VideoTexture(video);
             const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-            const videoGeometry = new THREE.PlaneGeometry(6, 3.5); // 大きめ背景
+            const videoGeometry = new THREE.PlaneGeometry(6, 4);
             const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
             videoMesh.material.depthTest = false;
             videoMesh.material.depthWrite = false;
             videoMesh.renderOrder = -1;
-            videoMesh.position.z = -5; // 少し奥に配置
-            scene.add(videoMesh);
+            videoMesh.position.z = -2;
+            camera.add(videoMesh);
         });
         return video.play();
     })
@@ -63,7 +65,7 @@ function init() {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
             idolMesh = new THREE.Mesh(geometry, material);
             idolMesh.position.set(0, -0.5, -2);
-            idolMesh.scale.set(1.2, 1.2, 1); // 初期スケール少し大きく
+            idolMesh.scale.set(1.5, 1.5, 1);
             scene.add(idolMesh);
         });
     };
