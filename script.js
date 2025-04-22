@@ -1,6 +1,6 @@
 
 let camera, scene, renderer, idolMesh;
-let video;
+let video, videoMesh;
 const scaleSlider = document.getElementById("scaleSlider");
 const captureBtn = document.getElementById("capture");
 const startButton = document.getElementById("startButton");
@@ -29,27 +29,26 @@ function init() {
     navigator.mediaDevices.getUserMedia({
         video: {
             facingMode: "environment",
-            width: { min: 1280, ideal: 1920, max: 2560 },
-            height: { min: 720, ideal: 1080, max: 1440 },
-            frameRate: { ideal: 30, max: 60 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
         },
         audio: false
     })
     .then(stream => {
         video.srcObject = stream;
-        video.addEventListener("canplay", () => {
+        video.addEventListener("loadedmetadata", () => {
+            const aspect = video.videoWidth / video.videoHeight;
+            const height = 3;
+            const width = height * aspect;
+
             const videoTexture = new THREE.VideoTexture(video);
             const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-            const distance = 5;
-            const fov = camera.fov * (Math.PI / 180);
-            const height = 2 * Math.tan(fov / 2) * distance;
-            const width = height * camera.aspect;
             const videoGeometry = new THREE.PlaneGeometry(width, height);
-            const videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
+            videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
             videoMesh.material.depthTest = false;
             videoMesh.material.depthWrite = false;
             videoMesh.renderOrder = -1;
-            videoMesh.position.z = -distance;
+            videoMesh.position.z = -5;
             scene.add(videoMesh);
         });
         return video.play();
@@ -102,6 +101,12 @@ function init() {
         link.download = "photo.png";
         link.href = dataURL;
         link.click();
+    });
+
+    window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
 }
 
