@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ARアイドル撮影体験</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #arContainer {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+      }
+      video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* カメラ映像を画面全体に表示 */
+      }
+      #characterImage {
+        position: absolute;
+        bottom: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 40vw;
+        touch-action: none; /* スマホのピンチやドラッグを許可 */
+      }
+      #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+      }
+      button {
+        font-size: 1.2em;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="arContainer">
+      <video id="camera" autoplay playsinline></video>
+      <!-- キャラクター画像を表示（後で差し替え可能） -->
+      <img id="characterImage" src="cleaned_character.png" alt="キャラクター">
+      <!-- 撮影ボタンを表示 -->
+      <div id="controls">
+        <button id="takePhoto">📸 撮影</button>
+      </div>
+    </div>
+
+    <script>
+      // カメラの映像を取得して背景に表示
+      const camera = document.getElementById('camera');
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          camera.srcObject = stream;
+        })
+        .catch(error => {
+          alert('カメラにアクセスできません：' + error.message);
+        });
+
+      // 拡大縮小対応（ピンチズーム）
+      const img = document.getElementById('characterImage');
+      let scale = 1;
+      let lastDist = null;
+
+      img.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (lastDist !== null) {
+            const delta = dist - lastDist;
+            scale += delta * 0.005;
+            scale = Math.min(Math.max(scale, 0.5), 3.0); // 拡大・縮小の制限
+            img.style.transform = `translateX(-50%) scale(${scale})`;
+          }
+          lastDist = dist;
+        }
+      });
+      img.addEventListener('touchend', () => {
+        lastDist = null;
+      });
+
+      // 撮影処理：現在の画面をcanvasに描画し画像保存（簡易版）
+      document.getElementById('takePhoto').addEventListener('click', () => {
+        const canvas = document.createElement('canvas');
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        // カメラ映像を背景として描画
+        ctx.drawImage(camera, 0, 0, w, h);
+        // キャラクター画像の現在の位置と拡大率で描画
+        const rect = img.getBoundingClientRect();
+        const scaleFactor = scale;
+        const imgWidth = img.naturalWidth * scaleFactor;
+        const imgHeight = img.naturalHeight * scaleFactor;
+        const centerX = w / 2 - imgWidth / 2;
+        const y = rect.top;
+        ctx.drawImage(img, centerX, y, imgWidth, imgHeight);
+
+        // 保存
+        const link = document.createElement('a');
+        link.download = 'photo.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    </script>
+  </body>
+</html>
