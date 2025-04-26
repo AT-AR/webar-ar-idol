@@ -64,12 +64,17 @@
           const relX = (rect.left - videoRect.left) / videoRect.width;
           const relY = (rect.top - videoRect.top) / videoRect.height;
           const relW = (rect.width) / videoRect.width;
-          const relH = (rect.height) / videoRect.height;
 
           const imgElement = new Image();
           imgElement.src = img.src;
           imgElement.onload = () => {
-            ctx.drawImage(imgElement, w * relX, h * relY, w * relW, h * relH);
+            const imgAspect = imgElement.naturalWidth / imgElement.naturalHeight;
+            const baseWidth = w * relW;
+            const baseHeight = baseWidth / imgAspect;
+            const centerX = w * relX;
+            const centerY = h * relY;
+
+            ctx.drawImage(imgElement, centerX - baseWidth / 2, centerY - baseHeight / 2, baseWidth, baseHeight);
 
             canvas.toBlob(blob => {
               const link = document.createElement('a');
