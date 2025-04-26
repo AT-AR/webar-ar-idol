@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ARアイドル撮影体験</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #arContainer { position: relative; width: 100vw; height: 100vh; background: black; }
+      video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+      #characterImage { position: absolute; top: 50%; left: 25%; transform: translate(-50%, -50%) scale(1); max-width: 40vw; touch-action: none; z-index: 2; }
+      #controls { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 12px; }
+      button { font-size: 1em; padding: 8px 16px; border: none; border-radius: 20px; background-color: #ff69b4; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+      button:hover { background-color: #ff85c1; }
+      #scaleSlider { width: 120px; }
+      label { font-size: 0.85em; color: #333; }
+    </style>
+  </head>
+  <body>
+    <div id="arContainer">
+      <video id="camera" autoplay playsinline></video>
+      <img id="characterImage" src="cleaned_character.png" alt="キャラクター">
+      <div id="controls">
+        <button id="takePhoto">撮影</button>
+        <label for="scaleSlider">キャラの大きさ</label>
+        <input id="scaleSlider" type="range" min="0.5" max="3.0" step="0.1" value="1">
+      </div>
+    </div>
+
+    <script>
+      const camera = document.getElementById('camera');
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => { camera.srcObject = stream; })
+        .catch(error => { alert('カメラにアクセスできません：' + error.message); });
+
+      const img = document.getElementById('characterImage');
+      const scaleSlider = document.getElementById('scaleSlider');
+      let scale = 1;
+
+      scaleSlider.addEventListener('input', () => {
+        scale = parseFloat(scaleSlider.value);
+        img.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      });
+
+      document.getElementById('takePhoto').addEventListener('click', () => {
+        const controls = document.getElementById('controls');
+        controls.style.display = 'none';
+
+        setTimeout(() => {
+          html2canvas(document.getElementById('arContainer')).then(canvas => {
+            controls.style.display = 'flex';
+
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let top = 0, bottom = canvas.height;
+            for (let y = 0; y < canvas.height; y++) {
+              let isWhiteRow = true;
+              for (let x = 0; x < canvas.width; x++) {
+                const index = (y * canvas.width + x) * 4;
+                if (!(imgData.data[index] === 255 && imgData.data[index+1] === 255 && imgData.data[index+2] === 255)) {
+                  isWhiteRow = false;
+                  break;
+                }
+              }
+              if (!isWhiteRow) { top = y; break; }
+            }
+            for (let y = canvas.height - 1; y >= 0; y--) {
+              let isWhiteRow = true;
+              for (let x = 0; x < canvas.width; x++) {
+                const index = (y * canvas.width + x) * 4;
+                if (!(imgData.data[index] === 255 && imgData.data[index+1] === 255 && imgData.data[index+2] === 255)) {
+                  isWhiteRow = false;
+                  break;
+                }
+              }
+              if (!isWhiteRow) { bottom = y; break; }
+            }
+
+            const croppedHeight = bottom - top;
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = canvas.width;
+            croppedCanvas.height = croppedHeight;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCtx.drawImage(canvas, 0, top, canvas.width, croppedHeight, 0, 0, canvas.width, croppedHeight);
+
+            const img = croppedCanvas.toDataURL('image/png');
+            const newTab = window.open();
+            if (newTab) {
+              newTab.document.body.style.margin = '0';
+              newTab.document.body.innerHTML = `<img src="${img}" style="width:100%;height:auto;">`;
+            } else {
+              alert('画像を表示するポップアップがブロックされました');
+            }
+          });
+        }, 100);
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  </body>
+</html>
