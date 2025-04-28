@@ -8,7 +8,7 @@
       body { margin: 0; overflow: hidden; }
       #arContainer { position: relative; width: 100vw; height: 100vh; background: black; }
       video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-      #characterImage { position: absolute; top: 50%; left: 25%; transform: translate(-50%, -50%) scale(1); max-width: 40vw; touch-action: none; z-index: 2; }
+      #characterImage { position: absolute; top: 50%; left: 25%; transform: translate(-50%, -50%) scale(1); max-width: 40vw; touch-action: none; z-index: 2; visibility: hidden; }
       #controls { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 12px; }
       button { font-size: 1em; padding: 8px 16px; border: none; border-radius: 20px; background-color: #ff69b4; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
       button:hover { background-color: #ff85c1; }
@@ -28,60 +28,65 @@
     </div>
 
     <script>
-      const camera = document.getElementById('camera');
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => { camera.srcObject = stream; })
-        .catch(error => { alert('カメラにアクセスできません：' + error.message); });
+      window.onload = () => {
+        const camera = document.getElementById('camera');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => { camera.srcObject = stream; })
+          .catch(error => { alert('カメラにアクセスできません：' + error.message); });
 
-      const img = document.getElementById('characterImage');
-      const preloadImg = new Image();
-      preloadImg.src = img.src;
-      const scaleSlider = document.getElementById('scaleSlider');
-      let scale = 1;
+        const img = document.getElementById('characterImage');
+        const preloadImg = new Image();
+        preloadImg.src = img.src;
+        preloadImg.onload = () => {
+          img.style.visibility = 'visible';
 
-      scaleSlider.addEventListener('input', () => {
-        scale = parseFloat(scaleSlider.value);
-        img.style.transform = `translate(-50%, -50%) scale(${scale})`;
-      });
+          const scaleSlider = document.getElementById('scaleSlider');
+          let scale = 1;
 
-      document.getElementById('takePhoto').addEventListener('click', () => {
-        const controls = document.getElementById('controls');
-        controls.style.display = 'none';
+          scaleSlider.addEventListener('input', () => {
+            scale = parseFloat(scaleSlider.value);
+            img.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          });
 
-        setTimeout(() => {
-          const video = document.getElementById('camera');
-          const videoRect = video.getBoundingClientRect();
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
+          document.getElementById('takePhoto').addEventListener('click', () => {
+            const controls = document.getElementById('controls');
+            controls.style.display = 'none';
 
-          ctx.drawImage(video, 0, 0, w, h);
+            setTimeout(() => {
+              const videoRect = camera.getBoundingClientRect();
+              const w = camera.videoWidth;
+              const h = camera.videoHeight;
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
 
-          const rect = img.getBoundingClientRect();
-          const relX = (rect.left + rect.width / 2 - videoRect.left) / videoRect.width;
-          const relY = (rect.top + rect.height / 2 - videoRect.top) / videoRect.height;
-          const relW = rect.width / videoRect.width;
+              ctx.drawImage(camera, 0, 0, w, h);
 
-          const imgAspect = preloadImg.naturalWidth / preloadImg.naturalHeight;
-          const baseWidth = w * relW;
-          const baseHeight = baseWidth / imgAspect;
-          const centerX = w * relX;
-          const centerY = h * relY;
+              const rect = img.getBoundingClientRect();
+              const relX = (rect.left + rect.width / 2 - videoRect.left) / videoRect.width;
+              const relY = (rect.top + rect.height / 2 - videoRect.top) / videoRect.height;
+              const relW = rect.width / videoRect.width;
 
-          ctx.drawImage(preloadImg, centerX - baseWidth / 2, centerY - baseHeight / 2, baseWidth, baseHeight);
+              const imgAspect = preloadImg.naturalWidth / preloadImg.naturalHeight;
+              const baseWidth = w * relW;
+              const baseHeight = baseWidth / imgAspect;
+              const centerX = w * relX;
+              const centerY = h * relY;
 
-          canvas.toBlob(blob => {
-            const link = document.createElement('a');
-            link.download = 'photo.png';
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            controls.style.display = 'flex';
-          }, 'image/png');
-        }, 100);
-      });
+              ctx.drawImage(preloadImg, centerX - baseWidth / 2, centerY - baseHeight / 2, baseWidth, baseHeight);
+
+              canvas.toBlob(blob => {
+                const link = document.createElement('a');
+                link.download = 'photo.png';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                controls.style.display = 'flex';
+              }, 'image/png');
+            }, 100);
+          });
+        }
+      };
     </script>
   </body>
 </html>
